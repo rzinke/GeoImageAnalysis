@@ -41,6 +41,13 @@ class ImagePSD:
         self.M = DS.RasterYSize
         self.N = DS.RasterXSize
 
+        # Pixel size
+        _, dx, _, _, _, dy = DS.GetGeoTransform()
+        if dx != dy:
+            print('WARNING! Pixel size in x ({:f} not equal to pixel size in y ({:f})'.\
+                format(dx, dy))
+        self.pxSize = dx
+
         del DS
 
 
@@ -152,7 +159,7 @@ class ImagePSD:
         axFT.set_title('log10(FT)')
 
         # Plot PSD
-        axPSD.loglog(self.kvals, self.binAmps, 'k')
+        axPSD.semilogy(self.kvals, self.binAmps, 'k')
 
         # Format PSD plot
         axPSD.set_xlabel('k')

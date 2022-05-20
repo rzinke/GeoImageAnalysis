@@ -141,11 +141,13 @@ if __name__ == '__main__':
 
 
     ## Plot image
-    imgFig, imgAx = plot_raster(img[::ds, ::ds], mask=mask, extent=extent,
-        cmap=inps.cmap, cbarOrient=inps.cbarOrient,
-        vmin=inps.vmin, vmax=inps.vmax,
-        minPct=inps.minPct, maxPct=inps.maxPct,
-        equalize=inps.equalize)
+    imgFig, imgAx = plot_raster(img[::ds, ::ds],
+            mask=mask[::ds, ::ds],
+            extent=extent,
+            cmap=inps.cmap, cbarOrient=inps.cbarOrient,
+            vmin=inps.vmin, vmax=inps.vmax,
+            minPct=inps.minPct, maxPct=inps.maxPct,
+            equalize=inps.equalize)
 
 
     ## Histogram
