@@ -47,7 +47,7 @@ def createParser():
         help='Verbose mode.')
     OutputArgs.add_argument('-p','--plot', dest='plot', action='store_true',
         help='Plot results.')
-    OutputArgs.add_argument('-o','--outname', dest='outName', type=str, default='Out',
+    OutputArgs.add_argument('-o','--outname', dest='outname', type=str, default='Out',
         help='Output head.')
 
     return parser

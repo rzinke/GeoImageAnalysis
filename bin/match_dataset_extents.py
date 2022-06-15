@@ -13,11 +13,12 @@ Tested.
 import os
 import argparse
 import matplotlib.pyplot as plt
-from IOsupport import confirm_outdir, rel_to_abs_paths, load_gdal_datasets, append_fname, save_gdal_dataset
+
+from ImageIO import confirm_outdir, rel_to_abs_paths, load_gdal_datasets, append_fname, save_gdal_dataset
 from RasterResampling import match_rasters
-from Checks import check_dataset_sizes
-from Masking import mask_datasets
-from Viewing import plot_raster
+from DatasetChecks import check_dataset_sizes
+from ImageMasking import mask_datasets
+from ImageViewing import plot_raster
 
 
 ### PARSER ---
@@ -33,14 +34,16 @@ def createParser():
     InputArgs = parser.add_argument_group('INPUTS')
     InputArgs.add_argument(dest='imgFiles', type=str, nargs='+',
         help='Files to be resampled.')
-    InputArgs.add_argument('-c','--cropping', dest='cropping', type=str, default='union',
-        help='Cropping scheme ([union], intersection).')
-    InputArgs.add_argument('-r','--resolution', dest='resolution', type=str, default='fine',
-        help='Resolution ([fine], coarse).')
+    InputArgs.add_argument('-c','--cropping', dest='cropping', type=str, choices=['union', 'intersection'], default='union',
+        help='Cropping scheme [union].')
+    InputArgs.add_argument('-r','--resolution', dest='resolution', type=str, choices=['fine', 'coarse'], default='fine',
+        help='Resolution [fine].')
+    InputArgs.add_argument('--algorithm', dest='alg', type=str, choices=['near', 'lanczos'], default='near',
+        help='Resampling algorithm [near].')
 
     OutputArgs = parser.add_argument_group('OUTPUTS')
     OutputArgs.add_argument('-o','--outName', dest='outName', type=str, default='Out', 
-        help='Output name prefix. ([Out]).')
+        help='Output name prefix [Out].')
     OutputArgs.add_argument('-v','--verbose', dest='verbose', action='store_true', 
         help='Verbose mode.')
     OutputArgs.add_argument('-p','--plot', dest='plot', action='store_true', 
@@ -56,7 +59,8 @@ def cmdParser(iargs = None):
 ### NAME FORMATTING ---
 def format_outnames(inNames, prefix, verbose=False):
     '''
-    Format the output names by adding the output name to the front, and "resampled" to the back.
+    Format the output names by adding the output name to the front, and
+     "resampled" to the back.
     '''
     # Setup
     outNames = []
@@ -99,8 +103,9 @@ if __name__ == '__main__':
 
 
     ## Resample
-    datasets = match_rasters(datasets, cropping=inps.cropping, resolution=inps.resolution,
-        verbose=inps.verbose)
+    datasets = match_rasters(datasets,
+            cropping=inps.cropping, resolution=inps.resolution,
+            verbose=inps.verbose)
 
 
     ## Save data
@@ -113,7 +118,8 @@ if __name__ == '__main__':
         DS = datasets[dsName]
 
         # Save data set
-        save_gdal_dataset(outNames[i], DS.GetRasterBand(1).ReadAsArray(), exDS=DS, verbose=inps.verbose)
+        save_gdal_dataset(outNames[i], DS.GetRasterBand(1).ReadAsArray(),
+            exDS=DS, verbose=inps.verbose)
 
 
     ## Plotting

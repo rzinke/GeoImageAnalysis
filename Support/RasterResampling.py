@@ -15,7 +15,8 @@ from GeoFormatting import determine_common_bounds, get_raster_size
 
 
 ### RASTER RESAMPLING---
-def gdal_resample(dataset, bounds, xRes=None, yRes=None, M=None, N=None, alg='near',
+def gdal_resample(dataset, bounds, xRes=None, yRes=None, M=None, N=None,
+        alg='near', TAP=False,
         outName=None, verbose=False):
     ''' Resample data set using GDAL warp. '''
     # Setup outputs
@@ -29,12 +30,12 @@ def gdal_resample(dataset, bounds, xRes=None, yRes=None, M=None, N=None, alg='ne
     dataset = gdal.Warp(outName, dataset,
         options=gdal.WarpOptions(format=fmt, outputBounds=bounds,
             xRes=xRes, yRes=yRes, width=N, height=M,
-            resampleAlg=alg))
+            resampleAlg=alg, targetAlignedPixels=TAP))
 
     return dataset
 
 
-def match_rasters(datasets, cropping='union', resolution='fine',
+def match_rasters(datasets, cropping='union', resolution='fine', alg='near',
         verbose=False):
     '''
     Resample rasters to a common grid.
@@ -59,13 +60,15 @@ def match_rasters(datasets, cropping='union', resolution='fine',
     M, N = get_raster_size(datasets[0])
 
     # Determine common bounds and resolution
-    bounds, xRes, yRes = determine_common_bounds(datasets, cropping, resolution, verbose)
+    bounds, xRes, yRes = determine_common_bounds(datasets,
+            cropping, resolution, verbose)
 
     # Loop through to resample data sets
     resDatasets = []  # empty list to store resampled data sets
     for dataset in datasets:
         # Resample data set
-        resDatasets.append(gdal_resample(dataset, bounds, xRes=xRes, yRes=yRes))
+        resDatasets.append(gdal_resample(dataset, bounds,
+            xRes=xRes, yRes=yRes, alg=alg, TAP=True))
 
     # Reformat as dictionary if input type was dictionary
     if dsNames is not None:

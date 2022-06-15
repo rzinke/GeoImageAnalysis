@@ -89,7 +89,7 @@ def init_centroids(centroids0, kClusters, verbose=False):
         # Report if requested
         if verbose == True:
             print('{:d} initial centroids provided ({:f} - {:f})'.\
-                format(nCentroids, centroids[0], centroids[-1]))
+                format(nCentroids, centroids0[0], centroids0[-1]))
 
     else:
         if verbose == True:

@@ -94,7 +94,7 @@ class KmeansClustering:
                     'list per cluster')
 
                 # Format lists into numpy array
-                centroids = np.array(centroids)
+                centroids = np.array([centroids]).T
 
             # Ensure number of centroids is consistent with number of clusters
             assert centroids.shape[0] == self.kClusters, \
