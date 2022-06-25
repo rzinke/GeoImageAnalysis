@@ -12,12 +12,13 @@ Tested.
 '''
 
 ### IMPORT MODULES ---
+import os
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.colors as pltColors
 
-from ImageIO import load_gdal_datasets
+from ImageIO import load_gdal_datasets, confirm_outname_ext
 from RasterResampling import match_rasters
 from ImageMasking import create_common_mask
 from GeoFormatting import transform_to_extent
@@ -36,7 +37,7 @@ def createParser():
         formatter_class=argparse.RawTextHelpFormatter, epilog=Examples)
 
     InputArgs = parser.add_argument_group('INPUTS')
-    InputArgs.add_argument(dest='mainImgName',
+    InputArgs.add_argument(dest='refImgName',
         help='Name of reference image.')
     InputArgs.add_argument(dest='secImgName',
         help='Name of comparison image.')
@@ -47,7 +48,7 @@ def createParser():
 
     MapArgs = parser.add_argument_group('MAP DISPLAY PARAMS')
     MapArgs.add_argument('-c','--cmap', dest='cmap', type=str, default='viridis',
-        help='Colormap ([viridis]).')
+        help='Colormap. [viridis].')
     MapArgs.add_argument('-co','--colorbar-orientation', dest='cbarOrient', type=str, default='horizontal',
         help='Colorbar orientation ([horizontal], vertical).')
     MapArgs.add_argument('-minPct','--min-percent', dest='minPct', type=float, default=None,
@@ -56,18 +57,20 @@ def createParser():
         help='Maximum percent clip value ([None]).')
 
     DataPlotArgs = parser.add_argument_group('DATA PLOT PARAMS')
-    DataPlotArgs.add_argument('-pt','--plot-type', dest='plotType', type=str, default='points',
-        help='Method of displaying data ([points], hexbin, hist, kde, contour, contourf)')
+    DataPlotArgs.add_argument('-pt','--plot-type', dest='plotType', type=str,
+        choices=['points', 'hexbin', 'hist', 'kde', 'contour', 'contourf'], default='points',
+        help='Method of displaying data. [points]')
     DataPlotArgs.add_argument('-ds','--downsampling-factor', dest='dsFactor', type=str, default='auto',
-        help='Downsampling factor: ds^2 ([\'auto\'], 1, 2, 3, ...)')
+        help='Downsampling factor: 2^ds ([\'auto\'], 1, 2, 3, ...)')
     DataPlotArgs.add_argument('--nbins', dest='nbins', type=int, default=30,
         help='Number of bins on a side for 2D histogram.')
     DataPlotArgs.add_argument('--log-density', dest='logDensity', action='store_true',
         help='Normalize heatmap colors to log10.')
 
     AnalysisArgs = parser.add_argument_group('ANALYSIS')
-    AnalysisArgs.add_argument('-a','--analysis-type', dest='analysisType', type=str, default=None,
-        help='Analysis type ([None], polyfit, pca)')
+    AnalysisArgs.add_argument('-a','--analysis-type', dest='analysisType', type=str,
+        choices=[None, 'polyfit', 'pca'], default=None,
+        help='Analysis type. [None]')
     AnalysisArgs.add_argument('--fit-order', dest='fitOrder', type=int, default=1,
         help='Polyfit order ([1], 2, 3, ...).')
 
@@ -76,6 +79,8 @@ def createParser():
         help='Verbose mode.')
     OutputArgs.add_argument('-p','--plot', dest='plot', action='store_true', 
         help='Plot outputs.')
+    OutputArgs.add_argument('--data-file', dest='dataFile', type=str, default=None,
+        help='File to which to write data comparison (column 1 reference image pixel values / column 2 secondary pixel values). ([None]).')
 
     return parser
 
@@ -88,36 +93,41 @@ def cmdParser(iargs = None):
 
 ### COMPARISON ---
 class MapComparison:
-    def __init__(self, mainImgName, secImgName, maskArgs=None, verbose=False):
+    def __init__(self, refImgName, secImgName, maskArgs=None, verbose=False):
         ''' Plot and compare two images. '''
         # Parameters
         self.verbose = verbose
 
+        # Data set names (basename with extension removed)
+        self.refName = '.'.join(os.path.basename(refImgName).split('.')[:-1])
+        self.secName = '.'.join(os.path.basename(secImgName).split('.')[:-1])
+
 
         ## Loading and formatting
         # Load images
-        self.__load_images__(mainImgName, secImgName, maskArgs)
+        self.__load_images__(refImgName, secImgName, maskArgs)
 
 
     ## Loading
-    def __load_images__(self, mainImgName, secImgName, maskArgs=None):
+    def __load_images__(self, refImgName, secImgName, maskArgs=None):
         ''' Load images and resample to common extent. '''
         # Load data sets
-        DSs = load_gdal_datasets([mainImgName, secImgName], verbose=self.verbose)
+        DSs = load_gdal_datasets([refImgName, secImgName], verbose=self.verbose)
 
         # Match spatial extent
-        DSs = match_rasters(DSs, cropping='intersection', resolution='coarse', verbose=self.verbose)
+        DSs = match_rasters(DSs, cropping='intersection', resolution='coarse',
+                verbose=self.verbose)
 
         # Create mask
         self.mask = create_common_mask(DSs, maskArgs, verbose=self.verbose)
 
         # Record images
         DSs = list(DSs.values())
-        self.mainImg = DSs[0].GetRasterBand(1).ReadAsArray()
+        self.refImg = DSs[0].GetRasterBand(1).ReadAsArray()
         self.secImg = DSs[1].GetRasterBand(1).ReadAsArray()
 
         # Remove NaNs
-        self.mainImg[np.isnan(self.mainImg)==1] = 0
+        self.refImg[np.isnan(self.refImg)==1] = 0
         self.secImg[np.isnan(self.secImg)==1] = 0
 
         # Record data set geographic properties
@@ -126,7 +136,8 @@ class MapComparison:
         self.proj = DSs[0].GetProjection()
 
         # Geographic transform
-        self.extent = transform_to_extent(self.tnsf, self.M, self.N, verbose=self.verbose)
+        self.extent = transform_to_extent(self.tnsf, self.M, self.N,
+                verbose=self.verbose)
 
         # Clear memory
         del DSs
@@ -142,28 +153,28 @@ class MapComparison:
         self.fitOrder = fitOrder  # polyline fit order
 
         # Mask data points
-        self.mainData = np.ma.array(self.mainImg, mask=(self.mask==0))
+        self.refData = np.ma.array(self.refImg, mask=(self.mask==0))
         self.secData = np.ma.array(self.secImg, mask=(self.mask==0))
 
         # Compress and flatten arrays
-        self.mainData = self.mainData.compressed().flatten()
+        self.refData = self.refData.compressed().flatten()
         self.secData = self.secData.compressed().flatten()
 
         # Array lengths of valid pixels
-        assert len(self.mainData) == len(self.secData), \
-            'Main and secondary data sets are not the same size ({:d} vs {:d})'.\
-            format(len(self.mainData), len(self.secData))
-        self.nPts = len(self.mainData)
+        assert len(self.refData) == len(self.secData), \
+            'Reference and secondary data sets are not the same size ({:d} vs {:d})'.\
+            format(len(self.refData), len(self.secData))
+        self.nPts = len(self.refData)
 
         # Report difference
         if self.verbose == True:
-            difference = self.secData - self.mainData
+            difference = self.secData - self.refData
             medianDiff = np.median(difference)
             meanDiff = np.mean(difference)
             meanAbsDiff = np.mean(np.abs(difference))
             RMS = np.sqrt(np.mean(difference**2))
 
-            print('Differences (secondary - main)')
+            print('Differences (secondary - reference)')
             print('\tMedian difference:   {:f}'.format(medianDiff))
             print('\tMean difference:     {:f}'.format(meanDiff))
             print('\tMean abs difference: {:f}'.format(meanAbsDiff))
@@ -197,7 +208,7 @@ class MapComparison:
             print('Analyzing with {:d}-order polyline fit.'.format(self.fitOrder))
 
         # Create design matrix
-        G = self.__create_design_matrix__(self.mainData, self.fitOrder)
+        G = self.__create_design_matrix__(self.refData, self.fitOrder)
 
         # Invert for solution
         self.B = np.linalg.inv(np.dot(G.T, G)).dot(G.T).dot(self.secData)
@@ -223,12 +234,12 @@ class MapComparison:
         if self.verbose == True: print('Analyzing using PCA.')
 
         # Stack data into column matrix
-        data = np.column_stack([self.mainData, self.secData])
+        data = np.column_stack([self.refData, self.secData])
 
         # Remove centroid
         dataMean = np.mean(data, axis=0)
         data = data - dataMean
-        self.mainMean, self.secMean = dataMean  # record for posterity
+        self.refMean, self.secMean = dataMean  # record for posterity
 
         # Covariance matrix
         C = np.dot(data.T, data)/(data.shape[0]-1)
@@ -282,13 +293,13 @@ class MapComparison:
             ncols = 3
 
         # Spawn figure
-        fig, [axMain, axSec, axDiff] = plt.subplots(nrows=nrows, ncols=ncols)
+        fig, [axRef, axSec, axDiff] = plt.subplots(nrows=nrows, ncols=ncols)
 
-        # Plot main figure
-        plot_raster(self.mainImg, mask=self.mask, extent=self.extent,
+        # Plot reference figure
+        plot_raster(self.refImg, mask=self.mask, extent=self.extent,
             cmap=cmap, cbarOrient=cbarOrient,
             minPct=minPct, maxPct=maxPct,
-            fig=fig, ax=axMain)
+            fig=fig, ax=axRef)
 
         # Plot secondary figure
         plot_raster(self.secImg, mask=self.mask, extent=self.extent,
@@ -297,15 +308,15 @@ class MapComparison:
             fig=fig, ax=axSec)
 
         # Plot difference map
-        plot_raster(self.secImg-self.mainImg, mask=self.mask, extent=self.extent,
+        plot_raster(self.secImg-self.refImg, mask=self.mask, extent=self.extent,
             cmap='cividis', cbarOrient=cbarOrient,
             minPct=minPct, maxPct=maxPct,
             fig=fig, ax=axDiff)
 
         # Format figure
-        axMain.set_title('Main image')
+        axRef.set_title('Reference image')
         axSec.set_title('Secondary image')
-        axDiff.set_title('Difference image\n(sec - main)')
+        axDiff.set_title('Difference image\n(sec - ref)')
         fig.tight_layout()
 
     def plot_data(self, plotType='pts', dsFactor='auto', nbins=30, logDensity=False):
@@ -348,7 +359,7 @@ class MapComparison:
             exit()
 
         # Format plot
-        self.axData.set_xlabel('main data values')
+        self.axData.set_xlabel('reference data values')
         self.axData.set_ylabel('secondary data values')
 
     def __plot_pts__(self):
@@ -357,7 +368,7 @@ class MapComparison:
         self.__determine_downsampling__(self.dsFactor)
 
         # Plot data points
-        self.axData.scatter(self.mainData[::self.ds], self.secData[::self.ds],
+        self.axData.scatter(self.refData[::self.ds], self.secData[::self.ds],
             color='gray')
 
     def __determine_downsampling__(self, dsFactor):
@@ -386,7 +397,7 @@ class MapComparison:
             colorNorm = None
 
         # Plot hexbins
-        cax = self.axData.hexbin(self.mainData, self.secData,
+        cax = self.axData.hexbin(self.refData, self.secData,
             cmap='viridis', norm=colorNorm)
 
         # Format colorbar
@@ -395,7 +406,7 @@ class MapComparison:
     def __plot_hist__(self):
         ''' Plot using 2D histogram scheme. '''
         # Plot histogram
-        histogram2d(self.mainData, self.secData,
+        histogram2d(self.refData, self.secData,
             nbins=self.nbins,
             logDensity=self.logDensity,
             fig=self.dataFig, ax=self.axData)
@@ -403,7 +414,7 @@ class MapComparison:
     def __plot_kde__(self):
         ''' Plot using 2D kernel density estimate scheme. '''
         # Plot KDE
-        kde2d(self.mainData, self.secData,
+        kde2d(self.refData, self.secData,
             nbins=self.nbins,
             logDensity=self.logDensity,
             fig=self.dataFig, ax=self.axData)
@@ -414,7 +425,7 @@ class MapComparison:
         self.__plot_pts__()
 
         # Plot KDE
-        kde2d(self.mainData, self.secData,
+        kde2d(self.refData, self.secData,
             plotType='contour',
             nbins=self.nbins,
             logDensity=self.logDensity,
@@ -423,7 +434,7 @@ class MapComparison:
     def __plot_contourf__(self):
         ''' Plot using 2D kernel density estimate as filled contours. '''
         # Plot KDE
-        kde2d(self.mainData, self.secData,
+        kde2d(self.refData, self.secData,
             plotType='contourf',
             nbins=self.nbins,
             logDensity=self.logDensity,
@@ -447,7 +458,7 @@ class MapComparison:
     def __plot_polyline__(self):
         ''' Plot polyline fit. '''
         # X-values
-        x = np.linspace(self.mainData.min(), self.mainData.max(), 100)
+        x = np.linspace(self.refData.min(), self.refData.max(), 100)
 
         # Create fit function
         G = self.__create_design_matrix__(x, self.fitOrder)
@@ -459,16 +470,40 @@ class MapComparison:
     def __plot_pca__(self):
         ''' Plot principal components. '''
         # Plot data centroid
-        self.axData.plot(self.mainMean, self.secMean, 'ko')
+        self.axData.plot(self.refMean, self.secMean, 'ko')
 
         # Plot eigenbasis
         scale = 3  # standard deviations
-        self.axData.plot([-scale*self.PC1[0]+self.mainMean, scale*self.PC1[0]+self.mainMean],\
+        self.axData.plot([-scale*self.PC1[0]+self.refMean, scale*self.PC1[0]+self.refMean],\
             [-scale*self.PC1[1]+self.secMean, scale*self.PC1[1]+self.secMean], 'k--',
             label='PC1')
-        self.axData.plot([-scale*self.PC2[0]+self.mainMean, scale*self.PC2[0]+self.mainMean],\
+        self.axData.plot([-scale*self.PC2[0]+self.refMean, scale*self.PC2[0]+self.refMean],\
             [-scale*self.PC2[1]+self.secMean, scale*self.PC2[1]+self.secMean], 'k--',
             label='PC2')
+
+
+    ## Saving
+    def save_to_file(self, datafname):
+        '''
+        Save data columns to a text file, excluding masked data.
+        Column 1: reference image pixel values
+        Column 2: secondary image pixel values
+        '''
+        # Check file extension
+        datafname = confirm_outname_ext(datafname, ['txt', 'dat', 'csv'])
+
+        # Create text file
+        with open(datafname, 'w') as datafile:
+            # Write header
+            header = '# {:s} {:s}\n'.format(self.refName, self.secName)
+            datafile.write(header)
+
+            # Save data
+            np.savetxt(datafile, np.column_stack([self.refData, self.secData]))
+
+        # Report if requested
+        if self.verbose == True:
+            print('Saved unmasked data columns to {:s}'.format(datafname))
 
 
 
@@ -480,7 +515,7 @@ if __name__ == '__main__':
 
 
     ## Comparison
-    compare = MapComparison(inps.mainImgName, inps.secImgName,
+    compare = MapComparison(inps.refImgName, inps.secImgName,
         maskArgs=inps.maskArgs,
         verbose=inps.verbose)
 
@@ -499,5 +534,8 @@ if __name__ == '__main__':
 
         # Plot analysis
         compare.plot_analysis()
+
+        # Save data columns to text file
+        compare.save_to_file(inps.dataFile)
 
         plt.show()
