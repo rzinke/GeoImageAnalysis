@@ -427,7 +427,7 @@ def plot_look_vectors(Px, Py, Pz):
 
 
 ### PROFILES ---
-def plot_profile(profGeom, fig=None, ax=None):
+def plot_map_profile(profGeom, fig=None, ax=None):
     '''
     Plot a map profile based on the corners provided by the "profile_geometry"
      class.

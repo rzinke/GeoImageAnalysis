@@ -80,7 +80,7 @@ def createParser():
     OutputArgs.add_argument('-p','--plot', dest='plot', action='store_true', 
         help='Plot outputs.')
     OutputArgs.add_argument('--data-file', dest='dataFile', type=str, default=None,
-        help='File to which to write data comparison (column 1 reference image pixel values / column 2 secondary pixel values). ([None]).')
+        help='File to which to write data comparison (column 1 reference image pixel values / column 2 secondary pixel values). [None].')
 
     return parser
 

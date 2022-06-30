@@ -17,7 +17,7 @@ from ImageIO import load_profile_endpoints, load_gdal_dataset, confirm_outdir, c
 from GeoFormatting import transform_to_extent, lola_to_xy
 from ImageMasking import create_mask
 from ImageProfiling import profile_geometry, extract_profile
-from ImageViewing import plot_raster, plot_profile
+from ImageViewing import plot_raster, plot_map_profile
 
 
 ### PARSER ---
@@ -218,8 +218,8 @@ class mapProfile:
             minPct=minPct, maxPct=maxPct,
             fig=mapFig, ax=axMap)
 
-        # Plot profile
-        plot_profile(self.profGeom, fig=mapFig, ax=axMap)
+        # Plot profile on map
+        plot_map_profile(self.profGeom, fig=mapFig, ax=axMap)
         axMap.plot(self.startLon, self.startLat, 'ks')
         axMap.plot([self.startLon, self.endLon], [self.startLat, self.endLat], 'k')
 
