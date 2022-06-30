@@ -569,10 +569,12 @@ def load_profile_endpoints(queryFilename, verbose=False):
 
 
 ### PROFILE SAVING ---
-def save_profile_data(outName, profStart, profEnd, profDist, profPts, verbose=False):
+def save_profile_data(outname, profStart, profEnd, profDist, profPts,
+    verbose=False):
     ''' Save profile using standardized format. '''
     # Setup
-    assert len(profDist) == len(profPts), 'Number of distance and measurements points must be identical'
+    assert len(profDist) == len(profPts), \
+        'Number of distance and measurements points must be identical'
     nPts = len(profDist)
 
     # File formatting
@@ -581,7 +583,7 @@ def save_profile_data(outName, profStart, profEnd, profDist, profPts, verbose=Fa
     dataStr = '{:f} {:f}\n'
 
     # Write contents to file
-    with open(outName, 'w') as profFile:
+    with open(outname, 'w') as profFile:
         profFile.write(metadata.format(*profStart, *profEnd))
         profFile.write(header)
         for i in range(nPts):

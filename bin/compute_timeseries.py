@@ -23,7 +23,7 @@ from ImageViewing import plot_raster
 
 
 ### PARSER ---
-Description = '''Project the EW and NS components of an image data set along the specified azimuth.'''
+Description = '''Invert for the displacement timeseries for a sequence of images.'''
 
 Examples = ''''''
 
