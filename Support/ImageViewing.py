@@ -175,37 +175,6 @@ def plot_histogram(img, mask=None, bins=128):
 
 
 
-### SCALING ---
-# def scale_to_power_quantity_decibels(img, P0):
-#     '''
-#     Scale the pixel intensities to decibels based on the power quanitities,
-#      according to the formula:
-#       Lp = 10.log10(P/P0) dB
-#     '''
-#     return 10*np.log10(img/P0)
-
-
-# def equalize_image(img):
-#     ''' Equalize the color balance of an image based on the histogram. '''
-#     # Compute histogram
-#     hcenters, hvals = image_histogram(img)
-#     hcenters[0], hcenters[-1] = (img.min(), img.max())
-
-#     # Integrate to build transform
-#     Hvals = np.cumsum(hvals)
-#     Hvals = Hvals - Hvals.min()  # set min value to 0
-#     Hvals = Hvals/Hvals.max()  # set max value to 1
-#     vmin, vmax = (0, 1)
-
-#     # Inverse interpolation
-#     Intp = interp1d(hcenters, Hvals, bounds_error=False, fill_value=0)
-
-#     img = Intp(img)
-
-#     return img, vmin, vmax
-
-
-
 ### RASTERS ---
 
 # >>>>>>
