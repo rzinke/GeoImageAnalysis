@@ -31,7 +31,7 @@ def createParser():
 
     InputArgs = parser.add_argument_group('INPUTS')
     InputArgs.add_argument(dest='datasets', nargs='+', type=str,
-        help='Name of reference image.')
+        help='Image names.')
     InputArgs.add_argument('-m','--mask', dest='maskArgs', nargs='+', type=str, default=None,
         help='Arguments for masking values/maps. ([None]).')
 

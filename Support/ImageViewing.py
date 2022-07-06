@@ -175,6 +175,15 @@ def plot_histogram(img, mask=None, bins=128):
 
 
 ### SCALING ---
+def scale_to_power_quantity_decibels(img, P0):
+    '''
+    Scale the pixel intensities to decibels based on the power quanitities,
+     according to the formula:
+      Lp = 10.log10(P/P0) dB
+    '''
+    return 10*np.log10(img/P0)
+
+
 def equalize_image(img):
     ''' Equalize the color balance of an image based on the histogram. '''
     # Compute histogram
