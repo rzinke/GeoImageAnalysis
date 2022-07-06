@@ -84,17 +84,12 @@ def logistic_transform(img):
     Apply a logistic function such that negative values are close to zero and
      positive values are close to one.
     '''
-    return 1/(1+np.exp(-img))
+    # Logistic
+    img = 1/(1+np.exp(-img))
 
 
-def equalize(img):
-    '''
-    Equalize the color range of the image.
-    '''
-    # Image size
-    M, N = img.shape
-    print('Shape', img.shape)
-
+def equalize_image(img):
+    ''' Equalize the color range of the image. '''
     # Compute histogram
     hist = ImageHistogram(img)
 
@@ -107,3 +102,12 @@ def equalize(img):
     img = intp(img)
 
     return img
+
+
+def scale_to_power_quantity_decibels(img, P0):
+    '''
+    Scale the pixel intensities to decibels based on the power quanitities,
+     according to the formula:
+      Lp = 10.log10(P/P0) dB
+    '''
+    return 10*np.log10(img/P0)

@@ -56,6 +56,8 @@ def createParser():
         help='Maximum clip value ([None]).')
     DisplayArgs.add_argument('-eq','--equalize', dest='equalize', action='store_true',
         help='Equalize')
+    DisplayArgs.add_argument('--no-display', dest='noDisplay', action='store_true',
+        help='No not display image (e.g., for servers).')
 
 
     HistogramArgs = parser.add_argument_group('HISTOGRAM')
@@ -80,8 +82,8 @@ def cmdParser(iargs = None):
 ### LOADING AND FORMATTING ---
 def load_image(imgName, bandNb=1, verbose=False):
     '''
-    Load the image as a GDAL data set. Extract the specified band and geographic
-     extent.
+    Load the image as a GDAL data set. Extract the specified band and
+     geographic extent.
     '''
     if verbose == True: print('Loading and formatting image')
 
@@ -103,20 +105,19 @@ def load_image(imgName, bandNb=1, verbose=False):
 
 ### SAVING ---
 def save_image(outName, fig, verbose=False):
-    '''
-    Save the image figure to an image file (PNG).
-    '''
+    ''' Save the image figure to an image file (PNG). '''
     # Confirm output directory
-    confirm_outdir(outName)
+    confirm_outdir(outname)
 
     # Confirm outname extension
-    outName = confirm_outname_ext(outName, ['png', 'PNG'])
+    outname = confirm_outname_ext(outname, ['png', 'PNG'])
 
     # Save figure
-    fig.savefig(outName)
+    fig.savefig(outname)
 
     # Report if requested
-    if verbose == True: print('Saved to: {:s}'.format(outName))
+    if verbose == True:
+        print('Saved to: {:s}'.format(outname))
 
 
 
@@ -170,4 +171,5 @@ if __name__ == '__main__':
         save_image(inps.outName, imgFig, verbose=inps.verbose)
 
 
-    plt.show()
+    if inps.noDisplay == False:
+        plt.show()
