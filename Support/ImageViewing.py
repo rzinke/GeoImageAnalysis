@@ -17,6 +17,7 @@ from scipy.interpolate import interp1d
 from scipy.stats import gaussian_kde
 from osgeo import gdal
 
+from ColorBalancing import equalize_image
 from GeoFormatting import DS_to_extent
 
 
@@ -175,24 +176,33 @@ def plot_histogram(img, mask=None, bins=128):
 
 
 ### SCALING ---
-def equalize_image(img):
-    ''' Equalize the color balance of an image based on the histogram. '''
-    # Compute histogram
-    hcenters, hvals = image_histogram(img)
-    hcenters[0], hcenters[-1] = (img.min(), img.max())
+# def scale_to_power_quantity_decibels(img, P0):
+#     '''
+#     Scale the pixel intensities to decibels based on the power quanitities,
+#      according to the formula:
+#       Lp = 10.log10(P/P0) dB
+#     '''
+#     return 10*np.log10(img/P0)
 
-    # Integrate to build transform
-    Hvals = np.cumsum(hvals)
-    Hvals = Hvals - Hvals.min()  # set min value to 0
-    Hvals = Hvals/Hvals.max()  # set max value to 1
-    vmin, vmax = (0, 1)
 
-    # Inverse interpolation
-    Intp = interp1d(hcenters, Hvals, bounds_error=False, fill_value=0)
+# def equalize_image(img):
+#     ''' Equalize the color balance of an image based on the histogram. '''
+#     # Compute histogram
+#     hcenters, hvals = image_histogram(img)
+#     hcenters[0], hcenters[-1] = (img.min(), img.max())
 
-    img = Intp(img)
+#     # Integrate to build transform
+#     Hvals = np.cumsum(hvals)
+#     Hvals = Hvals - Hvals.min()  # set min value to 0
+#     Hvals = Hvals/Hvals.max()  # set max value to 1
+#     vmin, vmax = (0, 1)
 
-    return img, vmin, vmax
+#     # Inverse interpolation
+#     Intp = interp1d(hcenters, Hvals, bounds_error=False, fill_value=0)
+
+#     img = Intp(img)
+
+#     return img, vmin, vmax
 
 
 
@@ -219,7 +229,7 @@ def plot_raster(img, mask=None, extent=None,
 
     # Equalize if requested
     if equalize == True:
-        img, vmin, vmax = equalize_image(img)
+        img = equalize_image(img)
 
     # Apply mask if provided
     if mask is not None:

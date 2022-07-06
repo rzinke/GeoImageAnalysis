@@ -202,7 +202,8 @@ def images_from_datasets(datasets, band=1, verbose=False):
 
 ### SAVING GDAL DATASETS ---
 def save_gdal_dataset(outName, imgs, mask=None, exDS=None,
-                      proj='', tnsf=(0.0, 1.0, 0.0, 0.0, 0.0,- 1.0), fmt='GTiff',
+                      proj='', tnsf=(0.0, 1.0, 0.0, 0.0, 0.0,- 1.0),
+                      fmt='GTiff',
                       verbose=False):
     '''
     Save image to georeferenced data set, given an example data set.
