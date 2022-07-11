@@ -15,7 +15,7 @@ import numpy as np
 from glob import glob
 import matplotlib.pyplot as plt
 
-from ImageIO import load_gdal_dataset, save_gdal_dataset
+from ImageIO import load_gdal_dataset, confirm_outdir, confirm_outname_ext, save_gdal_dataset
 from ImageMasking import create_mask
 from GeoFormatting import DS_to_extent
 from ColorBalancing import scale_to_power_quantity_decibels
@@ -41,7 +41,7 @@ def createParser():
     InputArgs.add_argument(dest='imgname', type=str,
         help='Image name.')
     InputArgs.add_argument('-p0','--reference-power', dest='P0', default=1,
-        help='Reference power. ([0], 1, 2, ..., minimum, mean, median, maximum).')
+        help='Reference power. ([1], 2, ..., minimum, mean, median, maximum).')
     InputArgs.add_argument('-m','--mask', dest='maskArgs', nargs='+', type=str, default=None,
         help='Arguments for masking values/maps. ([None]).')
 
@@ -133,8 +133,8 @@ if __name__ == '__main__':
     # Save if requested
     if inps.outname:
         # Format output name
-        confirm_outdir(outname)
-        outname = confirm_outname_ext(outname, ['tif'])
+        confirm_outdir(inps.outname)
+        outname = confirm_outname_ext(inps.outname, ['tif'])
 
         # Save to GDAL data set
         save_gdal_dataset(outname, dBimg, mask=mask, exDS=DS,
