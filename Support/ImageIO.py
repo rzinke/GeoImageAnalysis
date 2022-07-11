@@ -3,6 +3,7 @@ SHORT DESCRIPTION
 Data set loading and saving, especially for GDAL compatibility.
 
 FUTURE IMPROVEMENTS
+    Better handling of multi-band data
 
 TESTING STATUS
 Tested.
@@ -183,6 +184,29 @@ def load_gdal_datasets(dsPaths, dsNames=None, verbose=False):
         datasets[dsName] = load_gdal_dataset(dsPath)
 
     return datasets
+
+
+def images_from_dataset(dataset, bands='all', verbose=False):
+    '''
+    Retrieve the specified bands from a GDAL data set.
+    Bands can be specified as all or a list of integers starting at 1.
+    '''
+    # Determine number of bands
+    if bands == 'all':
+        nBands = dataset.RasterCount
+        bands = range(1, nBands+1)
+    else:
+        bands = [int(band) for band in bands]
+        nBands = len(bands)
+
+    # Load image value arrays and flatten
+    imgs = [dataset.GetRasterBand(band).ReadAsArray() for band in bands]
+
+    # Report if requested
+    if verbose == True:
+        print('{:d} bands loaded'.format(nBands))
+
+    return imgs
 
 
 def images_from_datasets(datasets, band=1, verbose=False):

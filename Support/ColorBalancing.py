@@ -25,9 +25,7 @@ class ImageStats:
         self.median = np.median(img)
 
     def report(self):
-        '''
-        Report statistics.
-        '''
+        ''' Report statistics. '''
         print('Extrema: {:.3f}, {:.3f}'.format(self.min, self.max))
         print('Mean: {:.3f}'.format(self.mean))
         print('Median: {:.3f}'.format(self.median))
@@ -37,9 +35,7 @@ class ImageStats:
 ### HISTOGRAM ---
 class ImageHistogram:
     def __init__(self, img, nbins=256):
-        '''
-        Create a histogram of the image.
-        '''
+        ''' Create a histogram of the image. '''
         # Flatten image values
         img = img.flatten()
 
@@ -53,9 +49,7 @@ class ImageHistogram:
         self.intrp = interpolate.interp1d(self.hbins, self.hvals, kind='linear')
 
     def show(self):
-        '''
-        Plot histogram.
-        '''
+        ''' Plot histogram. '''
         # Spawn figure and axis
         fig, ax = plt.subplots()
 
@@ -69,20 +63,18 @@ class ImageHistogram:
 
 
 ### COLOR BALANCING ---
-def norm_colors(img):
-    '''
-    Stretch colors to values between 0 and 255.
-    '''
+def norm_colors(img, cmax=255):
+    ''' Stretch colors to values between 0 and <cmax> (e.g., 255). '''
     img = img - img.min()
-    img = 255 * img/img.max()
+    img = cmax * img/img.max()
 
     return img
 
 
 def logistic_transform(img):
     '''
-    Apply a logistic function such that negative values are close to zero and
-     positive values are close to one.
+    Apply a logistic function such that negative values are close to
+     zero and positive values are close to one.
     '''
     # Logistic
     img = 1/(1+np.exp(-img))

@@ -14,6 +14,7 @@ import argparse
 import numpy as np
 from glob import glob
 import matplotlib.pyplot as plt
+
 from ImageIO import load_gdal_datasets
 from ImagePCA import StackPCA
 

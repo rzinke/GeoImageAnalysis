@@ -65,6 +65,9 @@ class KmeansClustering:
             print('Initializing centroids')
 
         if centroids == 'auto':
+            # Initialize random number generator
+            np.random.seed(0)
+
             # Determine data set extrema
             mins = np.min(self.data, axis=0)
             maxs = np.max(self.data, axis=0)
@@ -185,3 +188,34 @@ class KmeansClustering:
             return True
         else:
             return False
+
+    def classify(self, data):
+        '''
+        Classify the data based on the centroids determined in the
+         previous steps.
+        <data> could be the same data set as originally provided, or a
+         different data set.
+        '''
+        if self.verbose == True:
+            print('Classifying data')
+
+        # Check data set size and dimensionality
+        mData, nDim = data.shape
+        assert nDim == self.nDim, \
+            'Data set dimensionality must be same as original input'
+
+        # Compute the distance from the input data to each centroid
+        dists = np.zeros((mData, self.kClusters))
+        for k in range(self.kClusters):
+            residuals = data - self.centroids[k,:]
+            dists[:,k] = np.sqrt(np.sum(residuals**2, axis=1))
+
+        # Index of final centroid for each data point
+        centroidIndices = np.argmin(dists, axis=1)
+
+        # Classify data values by centroids
+        classifiedData = np.zeros(data.shape)
+        for k in range(self.kClusters):
+            classifiedData[centroidIndices==k,:] = self.centroids[k]
+
+        return classifiedData
