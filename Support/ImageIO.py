@@ -3,6 +3,7 @@ SHORT DESCRIPTION
 Data set loading and saving, especially for GDAL compatibility.
 
 FUTURE IMPROVEMENTS
+    Better handling of multi-band data
 
 TESTING STATUS
 Tested.

@@ -1,4 +1,4 @@
-# GeoImagePost-Proc
+# GeoImageAnalysis
 
-Tools for post-processing optical image correlation data sets.
+Tools for analysis, and filtering of geospatial image data.
 
