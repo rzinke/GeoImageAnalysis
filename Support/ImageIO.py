@@ -185,6 +185,29 @@ def load_gdal_datasets(dsPaths, dsNames=None, verbose=False):
     return datasets
 
 
+def images_from_dataset(dataset, bands='all', verbose=False):
+    '''
+    Retrieve the specified bands from a GDAL data set.
+    Bands can be specified as all or a list of integers starting at 1.
+    '''
+    # Determine number of bands
+    if bands == 'all':
+        nBands = dataset.RasterCount
+        bands = range(1, nBands+1)
+
+    # Load image value arrays and flatten
+    imgs = [
+                dataset.GetRasterBand(band).ReadAsArray() \
+                for band in bands
+                ]
+
+    # Report if requested
+    if verbose == True:
+        print('{:d} bands loaded'.format(nBands))
+
+    return imgs
+
+
 def images_from_datasets(datasets, band=1, verbose=False):
     ''' Retrieve the images from a list or dictionary of GDAL data sets. '''
     if verbose == True: print('Retrieving images from data sets')
@@ -197,6 +220,52 @@ def images_from_datasets(datasets, band=1, verbose=False):
         imgs[dsName] = datasets[dsName].GetRasterBand(band).ReadAsArray()
 
     return imgs
+
+
+# def load_multiband(fpath, bands=[1], verbose=False):
+#     ''' Load a mulit-band GDAL-compatible image or set of images. '''
+#     if verbose == True:
+#         print('Loading multi-band image or multiple images.')
+
+#     # Check number of inputs to determine course of action
+#     nPaths = len(fpaths)
+
+#     # Load image(s) based on path(s) given
+#     if nPaths == 1:
+#         if verbose == True: print('1 path specified')
+
+#         # Use only first value of list for now
+#         fpaths = fpaths[0]
+
+#         # Determine if wildcard or specific image
+#         if '*' in fpaths:
+#             if verbose == True: print('... Searching wildcard string')
+
+#             # Find all files that meet the search criterion
+#             fpaths = glob(fpaths)
+
+#             # Number of images found
+#             nImgs = len(fpaths)
+
+#             if verbose == True:
+#                 print('... {:d} images found'.format(nImgs))
+
+#         # No wildcard implies single image specified
+#         else:
+#             if verbose == True: print('... Single image specified')
+
+#             # Return to list
+#             fpaths = [fpaths]
+
+#             # Set number of images
+#             nImgs = 1
+
+#     elif nPaths > 1:
+#         if verbose == True:
+#             print('{:d} images specified'.format(nPaths))
+
+#     # Load images by looping through file paths and bands
+#     datasets = load_gdal_datasets(fpaths, verbose=verbose)
 
 
 

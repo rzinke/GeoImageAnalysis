@@ -8,7 +8,7 @@ FUTURE IMPROVEMENTS
 
 
 TESTING STATUS
-Tested.
+In development.
 '''
 
 ### IMPORT MODULES ---
@@ -17,7 +17,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.stats import gaussian_kde
 
-from ImageIO import confirm_outdir, confirm_outname_ext, load_gdal_dataset, save_gdal_dataset
+from ImageIO import confirm_outdir, confirm_outname_ext, load_gdal_dataset, images_from_dataset, save_gdal_dataset
 from GeoFormatting import DS_to_extent
 from ImageClassification import KmeansClustering
 from ImageViewing import image_stats, image_percentiles, plot_raster
@@ -35,7 +35,7 @@ def createParser():
     InputArgs = parser.add_argument_group('INPUTS')
     InputArgs.add_argument(dest='imgFile', type=str,
         help='Image file name.')
-    InputArgs.add_argument('-b','--band', dest='bandNb', type=int, default=1,
+    InputArgs.add_argument('-b','--bands', dest='bands', nargs='+', default='all',
         help='Image band number to display.')
 
     ClusterArgs = parser.add_argument_group('CLUSTERING')
@@ -165,14 +165,17 @@ if __name__ == '__main__':
     extent = DS_to_extent(DS)
     M, N = DS.RasterYSize, DS.RasterXSize
 
-    # Retreive and format image
-    origImg = DS.GetRasterBand(inps.bandNb).ReadAsArray()
-    origImg = origImg.reshape(M*N, 1)
+    # Load image bands
+    imgs = images_from_dataset(DS, inps.bands, verbose=inps.verbose)
+    nBands = len(imgs)
+
+    # Format image values into (nBands x M.N) array
+    imgValues = np.column_stack([band.flatten() for band in imgs])
 
 
     ## K-means cluster analysis
     # Cluster analysis
-    clusters = KmeansClustering(origImg,
+    clusters = KmeansClustering(imgValues,
             inps.kClusters, centroids=centroids0,
             maxIterations=inps.maxIterations,
             verbose=inps.verbose)
